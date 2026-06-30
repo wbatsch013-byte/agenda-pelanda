@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda — Sala de Reunião Pelanda</title>
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --border: #e2e0d8;
+    --text: #1a1916;
+    --text-muted: #6b6860;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --accent-border: #bfdbfe;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --danger-border: #fecaca;
+    --success: #16a34a;
+    --success-light: #f0fdf4;
+    --success-border: #bbf7d0;
+    --warning: #d97706;
+    --warning-light: #fffbeb;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .logo { font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab { padding: 6px 16px; border-radius: 6px; border: none; background: none; font-size: 14px; color: var(--text-muted); cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .nav-tab:hover { background: var(--bg); color: var(--text); }
+  .nav-tab.active { background: var(--accent-light); color: var(--accent); }
+
+  main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* MURAL */
+  .mural-header { margin-bottom: 1.5rem; }
+  .mural-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .mural-header p { font-size: 14px; color: var(--text-muted); }
+  .mural-hoje { margin-bottom: 2rem; }
+  .mural-section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .mural-empty { text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 14px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+  .mural-dia-grupo { margin-bottom: 1.5rem; }
+  .mural-dia-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .mural-dia-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .card-ag {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    transition: border-color 0.15s;
+  }
+  .card-ag:hover { border-color: #c7c5bd; }
+  .card-ag-hora {
+    min-width: 80px;
+    text-align: center;
+    background: var(--accent-light);
+    border: 1px solid var(--accent-border);
+    border-radius: 6px;
+    padding: 6px 8px;
+  }
+  .card-ag-hora .h-ini { font-size: 15px; font-weight: 700; color: var(--accent); line-height: 1; }
+  .card-ag-hora .h-fim { font-size: 11px; color: var(--accent); opacity: 0.7; margin-top: 2px; }
+  .card-ag-body { flex: 1; }
+  .card-ag-title { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .card-ag-meta { font-size: 13px; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 10px; }
+  .card-ag-motivo { font-size: 13px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .badge-sala { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-border); }
+
+  /* FORMULÁRIO */
+  .form-header { margin-bottom: 1.5rem; }
+  .form-header h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+  .form-header p { font-size: 14px; color: var(--text-muted); }
+  .form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  input, select, textarea {
+    width: 100%; padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text);
+    background: #fafaf8;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; font-family: inherit; }
+  .btn-primary { background: var(--accent); color: #fff; width: 100%; margin-top: 4px; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-danger-sm { background: none; border: none; color: var(--danger); cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 13px; font-weight: 500; }
+  .btn-danger-sm:hover { background: var(--danger-light); }
+
+  .alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-top: 10px; display: none; }
+  .alert-danger { background: var(--danger-light); border: 1px solid var(--danger-border); color: var(--danger); }
+  .alert-success { background: var(--success-light); border: 1px solid var(--success-border); color: var(--success); }
+
+  /* LISTA */
+  .lista-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .lista-header h2 { font-size: 16px; font-weight: 600; }
+  .count-badge { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent-border); font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 20px; }
+  .filtros { display: flex; gap: 10px; margin-bottom: 12px; }
+  .filtros input, .filtros select { font-size: 13px; }
+
+  .card-lista {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .card-lista-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .card-lista-meta { font-size: 12px; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+  .card-lista-motivo { font-size: 12px; color: var(--text-muted); font-style: italic; }
+  .empty-list { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 14px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); }
+
+  .status-bar { background: var(--warning-light); border: 1px solid #fde68a; color: var(--warning); font-size: 13px; padding: 8px 14px; border-radius: 8px; margin-bottom: 1rem; display: none; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .nav-tab { padding: 6px 10px; font-size: 13px; }
+    header { padding: 0 1rem; }
+    main { padding: 1.5rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Agenda Pelanda
+  </div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('mural')">Mural</button>
+    <button class="nav-tab" onclick="showPage('agendar')">Agendar</button>
+    <button class="nav-tab" onclick="showPage('lista')">Gerenciar</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- MURAL -->
+  <div class="page active" id="page-mural">
+    <div class="mural-header">
+      <h1>Mural de agendamentos</h1>
+      <p>Sala de reunião — confira os horários ocupados</p>
+    </div>
+    <div class="status-bar" id="status-bar">Carregando agendamentos...</div>
+    <div class="mural-hoje">
+      <div class="mural-section-label" id="label-hoje">Hoje</div>
+      <div id="mural-hoje-lista"></div>
+    </div>
+    <div id="mural-proximos"></div>
+  </div>
+
+  <!-- AGENDAR -->
+  <div class="page" id="page-agendar">
+    <div class="form-header">
+      <h1>Novo agendamento</h1>
+      <p>Preencha os dados para reservar a sala de reunião</p>
+    </div>
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="f-data">
+        </div>
+        <div class="form-group">
+          <label>Horário de início</label>
+          <input type="time" id="f-hora">
+        </div>
+        <div class="form-group">
+          <label>Duração</label>
+          <select id="f-duracao">
+            <option value="30">30 minutos</option>
+            <option value="60" selected>1 hora</option>
+            <option value="90">1h30</option>
+            <option value="120">2 horas</option>
+            <option value="180">3 horas</option>
+            <option value="240">4 horas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Responsável</label>
+          <input type="text" id="f-resp" placeholder="Seu nome">
+        </div>
+        <div class="form-group full">
+          <label>Participantes</label>
+          <input type="text" id="f-part" placeholder="Ex: Ana, Carlos, Mariana">
+        </div>
+        <div class="form-group full">
+          <label>Motivo / pauta</label>
+          <textarea id="f-motivo" placeholder="Descreva o motivo da reunião"></textarea>
+        </div>
+      </div>
+      <div class="alert alert-danger" id="alerta-conflito">⚠️ Conflito de horário! Já existe um agendamento nesse período.</div>
+      <div class="alert alert-success" id="alerta-ok">✓ Sala agendada com sucesso!</div>
+      <button class="btn btn-primary" id="btn-agendar" onclick="agendar()">Confirmar agendamento</button>
+    </div>
+  </div>
+
+  <!-- LISTA / GERENCIAR -->
+  <div class="page" id="page-lista">
+    <div class="lista-header">
+      <h2>Agendamentos</h2>
+      <span class="count-badge" id="count">0</span>
+    </div>
+    <div class="filtros">
+      <input type="date" id="filtro-data" onchange="renderLista()" style="flex:1">
+      <input type="text" id="filtro-resp" oninput="renderLista()" placeholder="Filtrar por responsável" style="flex:1">
+    </div>
+    <div id="lista-items"></div>
+  </div>
+
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBpFsrOZXBA2Hg1hLWDonEE_vxhvg2_dgo",
+    authDomain: "agenda-sala-de-reuniao-pelanda.firebaseapp.com",
+    projectId: "agenda-sala-de-reuniao-pelanda",
+    storageBucket: "agenda-sala-de-reuniao-pelanda.firebasestorage.app",
+    messagingSenderId: "315715139914",
+    appId: "1:315715139914:web:30e294da8ca0e1a58029b3"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const col = collection(db, "salas");
+
+  let agendamentos = [];
+
+  // listener em tempo real
+  onSnapshot(query(col, orderBy("data"), orderBy("hora")), (snap) => {
+    agendamentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderMural();
+    renderLista();
+    document.getElementById('count').textContent = agendamentos.length;
+  });
+
+  function toMin(h) { const [hh,mm] = h.split(':').map(Number); return hh*60+mm; }
+  function fimHora(h, dur) { const t = toMin(h)+parseInt(dur); return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; }
+  function fmtData(d) { if(!d) return ''; const [y,m,dia] = d.split('-'); return `${dia}/${m}/${y}`; }
+  function hoje() { return new Date().toISOString().split('T')[0]; }
+  function nomeDia(d) {
+    const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const [y,m,dia] = d.split('-').map(Number);
+    return dias[new Date(y,m-1,dia).getDay()];
+  }
+
+  function temConflito(data, hora, duracao, excluirId) {
+    const ini = toMin(hora), fim = ini + parseInt(duracao);
+    return agendamentos.some(a => {
+      if (a.id === excluirId || a.data !== data) return false;
+      const aIni = toMin(a.hora), aFim = aIni + parseInt(a.duracao);
+      return ini < aFim && fim > aIni;
+    });
+  }
+
+  window.agendar = async function() {
+    const data = document.getElementById('f-data').value;
+    const hora = document.getElementById('f-hora').value;
+    const duracao = document.getElementById('f-duracao').value;
+    const resp = document.getElementById('f-resp').value.trim();
+    const part = document.getElementById('f-part').value.trim();
+    const motivo = document.getElementById('f-motivo').value.trim();
+    const conf = document.getElementById('alerta-conflito');
+    const ok = document.getElementById('alerta-ok');
+    conf.style.display = 'none'; ok.style.display = 'none';
+    if (!data || !hora || !resp || !motivo) { alert('Preencha todos os campos obrigatórios.'); return; }
+    if (temConflito(data, hora, duracao)) { conf.style.display = 'block'; return; }
+    const btn = document.getElementById('btn-agendar');
+    btn.disabled = true; btn.textContent = 'Salvando...';
+    try {
+      await addDoc(col, { data, hora, duracao, resp, part, motivo, criadoEm: new Date().toISOString() });
+      ok.style.display = 'block';
+      setTimeout(() => ok.style.display = 'none', 3000);
+      ['f-data','f-hora','f-resp','f-part','f-motivo'].forEach(id => document.getElementById(id).value = '');
+    } catch(e) { alert('Erro ao salvar. Verifique a conexão.'); }
+    btn.disabled = false; btn.textContent = 'Confirmar agendamento';
+  };
+
+  window.remover = async function(id) {
+    if (!confirm('Remover este agendamento?')) return;
+    await deleteDoc(doc(db, 'salas', id));
+  };
+
+  function cardMural(a) {
+    return `<div class="card-ag">
+      <div class="card-ag-hora">
+        <div class="h-ini">${a.hora}</div>
+        <div class="h-fim">${fimHora(a.hora, a.duracao)}</div>
+      </div>
+      <div class="card-ag-body">
+        <div class="card-ag-title">${a.resp}</div>
+        <div class="card-ag-meta">
+          ${a.part ? `<span>👥 ${a.part}</span>` : ''}
+          <span>⏱ ${a.duracao} min</span>
+        </div>
+        ${a.motivo ? `<div class="card-ag-motivo">${a.motivo}</div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function renderMural() {
+    const h = hoje();
+    const labelHoje = document.getElementById('label-hoje');
+    labelHoje.textContent = `Hoje — ${nomeDia(h)}, ${fmtData(h)}`;
+
+    const deHoje = agendamentos.filter(a => a.data === h);
+    const muralHoje = document.getElementById('mural-hoje-lista');
+    muralHoje.innerHTML = deHoje.length
+      ? deHoje.map(cardMural).join('')
+      : '<div class="mural-empty">Nenhum agendamento para hoje.</div>';
+
+    // próximos 14 dias, agrupados por dia
+    const proxDias = [...new Set(agendamentos.filter(a => a.data > h).map(a => a.data))].slice(0,14);
+    const proxEl = document.getElementById('mural-proximos');
+    if (!proxDias.length) { proxEl.innerHTML = ''; return; }
+    proxEl.innerHTML = proxDias.map(dia => {
+      const items = agendamentos.filter(a => a.data === dia);
+      return `<div class="mural-dia-grupo">
+        <div class="mural-dia-label">${nomeDia(dia)}, ${fmtData(dia)}</div>
+        ${items.map(cardMural).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  function renderLista() {
+    const fd = document.getElementById('filtro-data').value;
+    const fr = document.getElementById('filtro-resp').value.toLowerCase();
+    let lista = agendamentos.filter(a => (!fd || a.data === fd) && (!fr || a.resp.toLowerCase().includes(fr)));
+    const el = document.getElementById('lista-items');
+    if (!lista.length) { el.innerHTML = '<div class="empty-list">Nenhum agendamento encontrado.</div>'; return; }
+    el.innerHTML = lista.map(a => `
+      <div class="card-lista">
+        <div>
+          <div class="card-lista-title">${a.resp}</div>
+          <div class="card-lista-meta">
+            <span>📅 ${fmtData(a.data)}</span>
+            <span>🕐 ${a.hora} – ${fimHora(a.hora, a.duracao)}</span>
+            ${a.part ? `<span>👥 ${a.part}</span>` : ''}
+          </div>
+          ${a.motivo ? `<div class="card-lista-motivo">${a.motivo}</div>` : ''}
+        </div>
+        <button class="btn-danger-sm" onclick="remover('${a.id}')">Remover</button>
+      </div>`).join('');
+  }
+
+  window.showPage = function(p) {
+    document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('page-' + p).classList.add('active');
+    event.currentTarget.classList.add('active');
+  };
+
+  // data mínima = hoje
+  const dataInput = document.getElementById('f-data');
+  dataInput.min = hoje();
+  dataInput.value = hoje();
+</script>
+</body>
+</html>
